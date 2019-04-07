@@ -1,0 +1,23 @@
+Copy constructor
+Move =
+Copy constructor
+Vectorishka:
+	data_ = 0x5615b95090c0
+		 data_[0] = 1
+		 data_[1] = 2
+	size = 2	capa = 2
+Vectorishka:
+	data_ = 0x5615b95090e0
+		 data_[0] = 1
+		 data_[1] = 2
+	size = 2	capa = 2
+Vectorishka:
+	data_ = 0x5615b9509100
+		 data_[0] = 2
+		 data_[1] = 4
+	size = 2	capa = 2
+Vectorishka:
+	data_ = 0x5615b95090a0
+		 data_[0] = 3
+		 data_[1] = 6
+	size = 2	capa = 2
