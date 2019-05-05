@@ -2,26 +2,39 @@
 // Created by max on 11.03.19.
 //
 
-#include "vectorishka.h"
+#ifndef VECTORISHKA_VECTORISHKA_CPP
+#define VECTORISHKA_VECTORISHKA_CPP
+//#include "vectorishka.h"
+
 FILE* file_ = nullptr;
 //!---------------------------------------------------------------------------------------------------------------------
-//!
+//! 2nd type of Avraam's guarantees
 //!
 //! \param size
 //!---------------------------------------------------------------------------------------------------------------------
-Vectorishka::Vectorishka(size_t size):
-        data_ (new data_t [size] {}),
+template <typename Type>
+Vectorishka<Type>::Vectorishka(size_t size):
         size_ (0),
         capa_ (size),
         error (0)
-{}
+{
+    try
+    {
+        data_ = new Type [size];
+    }
+    catch (const std::bad_alloc &error)
+    {
+        throw error;
+    }
+}
 
 
 //!---------------------------------------------------------------------------------------------------------------------
-//!
+//!Noexcept destructor
 //!
 //!---------------------------------------------------------------------------------------------------------------------
-Vectorishka::~Vectorishka()
+template <typename Type>
+Vectorishka<Type>::~Vectorishka()
 {
     delete [] data_;
     data_ = nullptr;
@@ -32,15 +45,17 @@ Vectorishka::~Vectorishka()
 
 
 //!---------------------------------------------------------------------------------------------------------------------
-//!
+//!Function for reallocating array of elements
 //!
 //! \return
 //!---------------------------------------------------------------------------------------------------------------------
-data_t* Vectorishka::increase()
+template <typename Type>
+Type* Vectorishka<Type>::increase()
 {
+
     if (capa_ == 0)
     {
-        data_ = new data_t;
+        data_ = new Type;
         if (data_ == nullptr)
             error = Alloc_fail;
 
@@ -49,7 +64,7 @@ data_t* Vectorishka::increase()
     }
 
     size_t  new_capa = 2 * capa_;
-    data_t* new_data = (data_t*) realloc(data_, new_capa);
+    Type* new_data = (Type*) realloc(data_, new_capa);
 
     if (new_data == nullptr)
     {
@@ -64,11 +79,12 @@ data_t* Vectorishka::increase()
 
 
 //!---------------------------------------------------------------------------------------------------------------------
-//!
+//!Function for decrease array of elem for saving memory(has hysteresis)
 //!
 //! \return
 //!---------------------------------------------------------------------------------------------------------------------
-data_t* Vectorishka::decrease()
+template <typename Type>
+Type* Vectorishka<Type>::decrease()
 {
     if (capa_ == 0)
     {
@@ -83,7 +99,7 @@ data_t* Vectorishka::decrease()
     }
 
     size_t  new_capa = capa_ / 2;
-    data_t* new_data = (data_t*) realloc(data_, new_capa);
+    Type* new_data = (Type*) realloc(data_, new_capa);
 
     if (new_data == nullptr)
     {
@@ -97,17 +113,19 @@ data_t* Vectorishka::decrease()
     return data_;
 }
 
-
 //!---------------------------------------------------------------------------------------------------------------------
+//!Function for using dinamic vectorishka. It push your elem to the end of array
 //!
-//!
-//!
+//! @Note It control only the latest elem.
+//! @Note Example:
+//! @Note   Vectorishka arr(10);
+//! @Note   arr[5] = 2;
+//! @Note   arr.pushback(23); // arr[6] = 23;
 //!---------------------------------------------------------------------------------------------------------------------
-int Vectorishka::pushback(data_t num)
+template <typename Type>
+int Vectorishka<Type>::pushback(Type num)
 {
     this->Ok();
-    assert(std::isfinite(num));
-
     int param = 0;
 
     if (size_ == capa_)
@@ -127,11 +145,12 @@ int Vectorishka::pushback(data_t num)
 
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Check your vectorishka. It can be changed(not const)
 //!
-//!
-//! \return
+//! \return error code
 //!---------------------------------------------------------------------------------------------------------------------
-int Vectorishka::Ok()
+template <typename Type>
+int Vectorishka<Type>::Ok()
 {
     if (error != 0)
     {
@@ -152,13 +171,17 @@ int Vectorishka::Ok()
 
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Function that can print you vectorishka, it needs a pointer to the logfile
 //!
-//!
-//! \return
+//! \return 0 if it can't print to the logfile, else 1
 //!---------------------------------------------------------------------------------------------------------------------
-int Vectorishka::Dump()
+template <typename Type>
+int Vectorishka<Type>::Dump()
 {
-    assert(file_ != nullptr);
+    if(file_ == nullptr)
+        return 0;
+
+    std::ofstream cout(Log, std::ios_base::app);
     fprintf(file_, "Vectorishka:\n");
     fprintf(file_, "\tdata_ = %p\n", data_);
 
@@ -166,7 +189,8 @@ int Vectorishka::Dump()
     {
         for (int i = 0; i < capa_; i ++)
         {
-            fprintf(file_, "\t\t data_[%d] = %lg\n", i, data_[i]);// Maybe poison, but it's array not stack
+            fprintf(file_, "\t\t data_[%d] =", i);// Maybe poison, but it's array, not stack
+            cout << data_[i];
         }
 
     }
@@ -174,17 +198,20 @@ int Vectorishka::Dump()
     if (size_ > capa_)
         fprintf(file_, "(Bad size <= size > capacity)\n");
     fprintf(file_, "\tcapa = %lu\n", capa_);
+
+    cout.close();
+    return 1;
 }
 
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Overloaded new for memory control
 //!
-//!
-//!
+//! \return pointer to the allocated memory
 //!---------------------------------------------------------------------------------------------------------------------
-
 void* operator new(size_t num, const char* file_name, const char* func_prot, int line)
 {
+    printf("%s:\n", __PRETTY_FUNCTION__);
     static uint num_of_call = 0;
     void* vector = new char[num];
 
@@ -198,8 +225,14 @@ void* operator new(size_t num, const char* file_name, const char* func_prot, int
     return vector;
 }
 
+//!---------------------------------------------------------------------------------------------------------------------
+//!Overloaded new[] for memory control
+//!
+//! \return pointer to the allocated memory
+//!---------------------------------------------------------------------------------------------------------------------
 void* operator new[](size_t num, const char* file_name, const char* func_prot, int line)
 {
+    printf("%s:\n", __PRETTY_FUNCTION__);
     static uint num_of_call = 0;
     void* vector = new char[num];
 
@@ -214,10 +247,12 @@ void* operator new[](size_t num, const char* file_name, const char* func_prot, i
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Function for swap info in two vectorishka
 //!
 //!
 //!---------------------------------------------------------------------------------------------------------------------
-void Vectorishka::swap(Vectorishka &that)
+template <typename Type>
+void Vectorishka<Type>::swap(Vectorishka &that)
 {
     std::swap(data_, that.data_);
     std::swap(size_, that.size_);
@@ -225,11 +260,13 @@ void Vectorishka::swap(Vectorishka &that)
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Overloaded operator= with swap&copy idiom
 //!
-//! \param original
+//! \param Vectorishka& rhs
 //! \return
 //! --------------------------------------------------------------------------------------------------------------------
-Vectorishka& Vectorishka::operator=(const Vectorishka& rhs) {
+template <typename Type>
+Vectorishka<Type>& Vectorishka<Type>::operator=(const Vectorishka& rhs) {
     this->Ok();
     Vectorishka copy(rhs);
     this->swap(copy);
@@ -237,11 +274,13 @@ Vectorishka& Vectorishka::operator=(const Vectorishka& rhs) {
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
-//!
+//!Copy constructor
 //!
 //! \param original
+//! @Note print info that it was called
 //!---------------------------------------------------------------------------------------------------------------------
-Vectorishka::Vectorishka(const Vectorishka &original)
+template <typename Type>
+Vectorishka<Type>::Vectorishka(const Vectorishka &original)
 {
     if (original.size_ < 0 || original.capa_ < original.size_ || original.data_ == nullptr)
     {
@@ -251,23 +290,25 @@ Vectorishka::Vectorishka(const Vectorishka &original)
 
     size_ = original.size_;
     capa_ = original.capa_;
-    data_ = new data_t [original.size_];//(data_t*) calloc(original.size, sizeof(data_t));
+    data_ = new Type [original.size_];//(data_t*) calloc(original.size, sizeof(data_t));
 
     for(int i = 0; i < size_; i++)
         data_[i] = original.data_[i];
 
-    fprintf(file_, "Copy constructor\n");
+    if(file_ != nullptr)
+        fprintf(file_, "Copy constructor\n");
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Overloaded operator[]
 //!
 //! \param index
 //! \return
+//! @Note it doesn't check index
 //!---------------------------------------------------------------------------------------------------------------------
-data_t& Vectorishka::operator[](size_t index)
+template <typename Type>
+Type& Vectorishka<Type>::operator[](size_t index)
 {
-    assert(index < capa_);
-
     if (index + 1 > size_)
         size_ = index + 1;
 
@@ -275,9 +316,12 @@ data_t& Vectorishka::operator[](size_t index)
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Overloaded operator+
+//!
 //!
 //!---------------------------------------------------------------------------------------------------------------------
-Vectorishka Vectorishka::operator +(const Vectorishka &a)
+template <typename Type>
+Vectorishka<Type> Vectorishka<Type>::operator +(const Vectorishka &a)
 {
     Vectorishka copy (a);
     copy += *(this);
@@ -285,9 +329,12 @@ Vectorishka Vectorishka::operator +(const Vectorishka &a)
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Overloaded operator +=
 //!
+//! @Note Sometimes it call copyconstructor
 //!---------------------------------------------------------------------------------------------------------------------
-Vectorishka& Vectorishka::operator +=(const Vectorishka &a)
+template <typename Type>
+Vectorishka<Type>& Vectorishka<Type>::operator +=(const Vectorishka &a)
 {
     if(a.capa_ > capa_)
     {
@@ -322,9 +369,10 @@ Vectorishka& Vectorishka::operator +=(const Vectorishka &a)
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
-//!
+//!Move constructor
 //!---------------------------------------------------------------------------------------------------------------------
-Vectorishka::Vectorishka(Vectorishka &&rhs):
+template <typename Type>
+Vectorishka<Type>::Vectorishka(Vectorishka &&rhs):
     data_(nullptr),
     size_(0),
     error(0),
@@ -336,11 +384,38 @@ Vectorishka::Vectorishka(Vectorishka &&rhs):
 }
 
 //!---------------------------------------------------------------------------------------------------------------------
+//!Overloaded move operator =
 //!
+//! It print info into logfile
 //!---------------------------------------------------------------------------------------------------------------------
-Vectorishka& Vectorishka::operator=(Vectorishka &&rhs)
+template <typename Type>
+Vectorishka<Type>& Vectorishka<Type>::operator=(Vectorishka &&rhs)
 {
     this->swap(rhs);
 
     fprintf(file_, "Move =\n");
 }
+
+template <>
+Vectorishka <Proxy_bool>::Vectorishka(size_t size):
+        size_(size),
+        error(0)
+{
+    if (size == 0)
+    {
+        capa_ = 0;
+        data_ = nullptr;
+    }
+    else
+    {
+        size_t frame = sizeof(char) * 8;
+        capa_ = size / frame;
+        if (size % frame > 0)
+            capa_++;
+
+        data_ = new Proxy_bool[capa_];
+        fprintf(file_, "mem bool = %p \n mem char = %p", data_, data_);
+    }
+}
+
+#endif

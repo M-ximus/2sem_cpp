@@ -6,13 +6,16 @@
 #define VECTORISHKA_VECTORISHKA_H
 
 #include <cstdio>
+#include <iostream>
 #include <cstdlib>
 #include <cmath>
 #include <cassert>
 #include <utility>
 #include <cstring>
+#include <fstream>
+#include "Proxy_bool.h"
 
-typedef double data_t;
+//typedef double data_t;
 extern FILE* file_;
 const char Log[] = "/home/max/CLionProjects/vectorishka/Plotina.logi";
 
@@ -29,26 +32,27 @@ enum {
     Constructor__error = 53,
 };
 
+template <typename Type>
 class Vectorishka {
 private:
-    data_t* data_;
+    Type*   data_;
     size_t  size_;
     size_t  capa_;
     int     error;
 
-    data_t* increase();
-    data_t* decrease();
+    Type* increase();
+    Type* decrease();
     void swap(Vectorishka& that);
 public:
     explicit Vectorishka(size_t size = 1);
     Vectorishka(const Vectorishka &original);
     Vectorishka(Vectorishka &&rhs);
     ~Vectorishka();
-    int pushback(data_t num);
+    int pushback(Type num);
     int Ok();
     int Dump();
     Vectorishka& operator = (const Vectorishka &original);
-    data_t&      operator [](size_t index);
+    Type&      operator [](size_t index);
     Vectorishka  operator + (const Vectorishka &a);
     Vectorishka& operator +=(const Vectorishka &a);
     Vectorishka& operator = (Vectorishka &&rhs);
@@ -57,7 +61,7 @@ public:
 void* operator new  (size_t num, const char* file_name, const char* func_prot, int line);
 void* operator new[](size_t num, const char* file_name, const char* func_prot, int line);
 
-#define delete( x ) \
+/*#define delete( x ) \
 {\
     delete x; \
     if (file_ != nullptr)\
@@ -80,5 +84,8 @@ void* operator new[](size_t num, const char* file_name, const char* func_prot, i
             fprintf(file_, "You wanted kill Luntik secondly in the %s in the function %s in the line - %d", __FILE__, __PRETTY_FUNCTION__, __LINE__);\
     }\
 }
+*/
+
+#include "vectorishka.cpp"
 
 #endif //VECTORISHKA_VECTORISHKA_H
