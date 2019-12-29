@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/max/CLionProjects/Game/Eat.h
+Matter.h
+/home/max/CLionProjects/Game/Matter.h
+
+/home/max/CLionProjects/Game/Matter.h
+iostream
+-
+SFML/Graphics.hpp
+-
+cmath
+-
+
+/home/max/CLionProjects/Game/main.cpp
+unistd.h
+/home/max/CLionProjects/Game/unistd.h
+Eat.h
+/home/max/CLionProjects/Game/Eat.h
+
